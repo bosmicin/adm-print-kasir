@@ -1,1 +1,22 @@
-{"name":"ADM PRINT Kasir Online","short_name":"ADM PRINT","start_url":"./index.html","display":"standalone","background_color":"#eef2f7","theme_color":"#0f766e","icons":[]}
+{
+  "name": "ADM PRINT Kasir Online",
+  "short_name": "ADM PRINT",
+  "description": "ADM PRINT Kasir Online",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#eef2f7",
+  "theme_color": "#0f766e",
+  "icons": [
+    {
+      "src": "./logo.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "./logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
