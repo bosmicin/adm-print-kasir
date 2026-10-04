@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Verifikasi Nota - ADM PRINT</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#eef2f7;color:#172033;font-family:Arial,sans-serif}
+.box{max-width:420px;margin:50px auto;background:#fff;padding:25px;border-radius:16px;box-shadow:0 2px 10px #0001;text-align:center}
+.logo{width:90px;height:90px;object-fit:contain}
+h1{font-size:22px;margin:10px 0}
+.valid{color:#15803d;font-size:20px;font-weight:bold}
+.invalid{color:#dc2626;font-size:20px;font-weight:bold}
+.info{text-align:left;background:#f8fafc;padding:12px;border-radius:10px;margin-top:15px;line-height:1.8}
+</style>
+</head>
+<body>
+
+<div class="box">
+<img src="logo.png" class="logo">
+<h1>ADM PRINT</h1>
+<div id="hasil">Memeriksa nota...</div>
+<div id="info"></div>
+</div>
+
+<script type="module">
+import{initializeApp}from"https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
+import{getFirestore,doc,getDoc}from"https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
+import{firebaseConfig}from"./config.js";
+
+const app=initializeApp(firebaseConfig);
+const db=getFirestore(app);
+
+const id=new URLSearchParams(location.search).get('id');
+const hasil=document.getElementById('hasil');
+const info=document.getElementById('info');
+
+if(!id){
+hasil.innerHTML='<div class="invalid">❌ KODE NOTA TIDAK ADA</div>';
+}else{
+try{
+const snap=await getDoc(doc(db,'verifications',id));
+
+if(snap.exists()){
+const x=snap.data();
+hasil.innerHTML='<div class="valid">✓ NOTA VALID</div>';
+info.innerHTML=
+'<b>No. Nota:</b> '+x.notaId+
+'<br><b>Tanggal:</b> '+x.date+
+'<br><b>Total:</b> '+x.total;
+}else{
+hasil.innerHTML='<div class="invalid">❌ NOTA TIDAK VALID</div>';
+info.innerHTML='Nomor nota tidak ditemukan di sistem ADM PRINT.';
+}
+}catch(e){
+hasil.innerHTML='<div class="invalid">⚠️ GAGAL MEMERIKSA</div>';
+info.innerHTML='Tidak dapat terhubung ke database.';
+}
+}
+</script>
+
+</body>
+</html>
