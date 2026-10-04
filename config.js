@@ -1,5 +1,5 @@
 export const firebaseConfig = {
-  apiKey: "AIzaSyAPmQZTHefk1YA8Crt7L1vLCUfVaIbu1M",
+  apiKey: "AIzaSyAPmQZTHefk1YA8Crt7L1vLCUfVaIbuIuM",
   authDomain: "adm-print.firebaseapp.com",
   projectId: "adm-print",
   storageBucket: "adm-print.firebasestorage.app",
