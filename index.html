@@ -85,13 +85,30 @@ import { getFirestore, collection, doc, addDoc, setDoc, deleteDoc, onSnapshot, q
 import { firebaseConfig } from "./config.js";
 
 const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app);
+const $ = id => document.getElementById(id);
+const emailEl=$('email'), passwordEl=$('password'), loginMsgEl=$('loginMsg');
+
 const rp=n=>new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(n||0);
 let products=[],cart=[],history=[],unsubP=null,unsubH=null;
 
 function col(name){return collection(db,'stores',auth.currentUser.uid,name)}
-function showMsg(m){document.getElementById('loginMsg').textContent=m}
-window.login=async()=>{try{await signInWithEmailAndPassword(auth,email.value,password.value)}catch(e){showMsg(e.message)}}
-window.register=async()=>{try{await createUserWithEmailAndPassword(auth,email.value,password.value);showMsg('Akun berhasil dibuat.')}catch(e){showMsg(e.message)}}
+function showMsg(m){loginMsgEl.textContent=m}
+window.login=async()=>{
+ try{
+   const em=emailEl.value.trim(), pw=passwordEl.value;
+   if(!em||!pw) return showMsg('Masukkan email dan password.');
+   await signInWithEmailAndPassword(auth,em,pw);
+ }catch(e){showMsg(e.message)}
+}
+window.register=async()=>{
+ try{
+   const em=emailEl.value.trim(), pw=passwordEl.value;
+   if(!em||!pw) return showMsg('Masukkan email dan password.');
+   if(pw.length<6) return showMsg('Password minimal 6 karakter.');
+   await createUserWithEmailAndPassword(auth,em,pw);
+   showMsg('Akun berhasil dibuat.');
+ }catch(e){showMsg(e.message)}
+}
 window.logout=()=>signOut(auth);
 
 onAuthStateChanged(auth,u=>{
@@ -106,11 +123,11 @@ function startSync(){
 function page(p){['kasir','produk','laporan'].forEach(x=>document.getElementById(x).style.display=x===p?'block':'none');['k','p','l'].forEach(x=>document.getElementById('n'+x)?.classList.remove('on'));document.getElementById('n'+({kasir:'k',produk:'p',laporan:'l'}[p]))?.classList.add('on');if(p==='produk')renderList();if(p==='laporan')renderReport()}
 window.page=page;
 function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
-function renderProducts(){let q=(document.getElementById('search').value||'').toLowerCase();let a=products.filter(p=>p.name.toLowerCase().includes(q)||String(p.barcode||'').toLowerCase().includes(q));document.getElementById('products').innerHTML=a.map(p=>`<div class="card"><b>${esc(p.name)}</b><div class="price">${rp(p.price)}</div><div class="muted">Stok: ${p.stock}</div><button class="btn primary full" onclick="addCart('${p.id}')" ${p.stock<=0?'disabled':''}>＋ Tambah</button></div>`).join('')||'<div class="empty">Produk tidak ditemukan</div>'}
+function renderProducts(){let q=($('search').value||'').toLowerCase();let a=products.filter(p=>p.name.toLowerCase().includes(q)||String(p.barcode||'').toLowerCase().includes(q));document.getElementById('products').innerHTML=a.map(p=>`<div class="card"><b>${esc(p.name)}</b><div class="price">${rp(p.price)}</div><div class="muted">Stok: ${p.stock}</div><button class="btn primary full" onclick="addCart('${p.id}')" ${p.stock<=0?'disabled':''}>＋ Tambah</button></div>`).join('')||'<div class="empty">Produk tidak ditemukan</div>'}
 window.addCart=id=>{let p=products.find(x=>x.id===id);if(!p||p.stock<=0)return;let x=cart.find(x=>x.id===id);if(x){if(x.qty<p.stock)x.qty++}else cart.push({...p,qty:1});renderCart()}
 window.qty=(id,d)=>{let x=cart.find(i=>i.id===id),p=products.find(i=>i.id===id);if(!x)return;x.qty+=d;if(x.qty>p.stock)x.qty=p.stock;if(x.qty<=0)cart=cart.filter(i=>i.id!==id);renderCart()}
-function total(){return Math.max(0,cart.reduce((s,i)=>s+i.price*i.qty,0)-Number(discount.value||0))}
-function renderCart(){document.getElementById('cart').innerHTML=cart.length?cart.map(i=>`<div class="row"><div><b>${esc(i.name)}</b><div class="muted">${rp(i.price)} × ${i.qty}</div></div><div class="qty"><button onclick="qty('${i.id}',-1)">−</button> ${i.qty} <button onclick="qty('${i.id}',1)">+</button></div></div>`).join(''):'<div class="empty">Keranjang kosong</div>';let t=total(),pay=+paid.value||0;document.getElementById('total').textContent=rp(t);document.getElementById('change').textContent=pay<t?'Uang kurang: '+rp(t-pay):'Kembalian: '+rp(pay-t)}
+function total(){return Math.max(0,cart.reduce((s,i)=>s+i.price*i.qty,0)-Number($('discount').value||0))}
+function renderCart(){document.getElementById('cart').innerHTML=cart.length?cart.map(i=>`<div class="row"><div><b>${esc(i.name)}</b><div class="muted">${rp(i.price)} × ${i.qty}</div></div><div class="qty"><button onclick="qty('${i.id}',-1)">−</button> ${i.qty} <button onclick="qty('${i.id}',1)">+</button></div></div>`).join(''):'<div class="empty">Keranjang kosong</div>';let t=total(),pay=+$('paid').value||0;document.getElementById('total').textContent=rp(t);document.getElementById('change').textContent=pay<t?'Uang kurang: '+rp(t-pay):'Kembalian: '+rp(pay-t)}
 
 function receiptText(x){
  let lines=['*ADM PRINT*','Nota Pembayaran',x.date,'------------------------------'];
@@ -133,18 +150,18 @@ function makeReceipt(x){
 
 window.checkout=async()=>{
  if(!cart.length)return alert('Keranjang kosong.');
- let t=total(),pay=+paid.value||0;if(pay<t)return alert('Uang kurang '+rp(t-pay));
+ let t=total(),pay=+$('paid').value||0;if(pay<t)return alert('Uang kurang '+rp(t-pay));
  for(const i of cart){let p=products.find(x=>x.id===i.id);if(!p||p.stock<i.qty)return alert('Stok '+i.name+' tidak cukup.')}
- let tr={date:new Date().toLocaleString('id-ID'),items:cart.map(x=>({...x})),discount:+discount.value||0,total:t,paid:pay,change:pay-t,createdAt:serverTimestamp()};
+ let tr={date:new Date().toLocaleString('id-ID'),items:cart.map(x=>({...x})),discount:+$('discount').value||0,total:t,paid:pay,change:pay-t,createdAt:serverTimestamp()};
  await addDoc(col('sales'),tr);
  for(const i of cart){let p=products.find(x=>x.id===i.id);await setDoc(doc(db,'stores',auth.currentUser.uid,'products',p.id),{name:p.name,price:p.price,stock:p.stock-i.qty,barcode:p.barcode||''})}
- cart=[];paid.value='';discount.value=0;renderCart();
+ cart=[];$('paid').value='';$('discount').value=0;renderCart();
  document.getElementById('printArea').innerHTML=makeReceipt(tr);
  if(confirm('Transaksi tersimpan.\n\nOK = cetak nota\nCancel = tidak cetak')) window.print();
  if(confirm('Kirim nota ini melalui WhatsApp?')) waReceipt(tr);
 }
 
-window.addProduct=async()=>{let n=pn.value.trim(),p=+pp.value,s=+ps.value,b=pb.value.trim();if(!n||p<=0||s<0)return alert('Lengkapi data produk.');await addDoc(col('products'),{name:n,price:p,stock:s,barcode:b});pn.value=pp.value=ps.value=pb.value=''}
+window.addProduct=async()=>{let n=$('pn').value.trim(),p=+$('pp').value,s=+$('ps').value,b=$('pb').value.trim();if(!n||p<=0||s<0)return alert('Lengkapi data produk.');await addDoc(col('products'),{name:n,price:p,stock:s,barcode:b});$('pn').value=$('pp').value=$('ps').value=$('pb').value=''}
 window.del=async id=>{if(confirm('Hapus produk?'))await deleteDoc(doc(db,'stores',auth.currentUser.uid,'products',id))}
 window.stock=async id=>{let p=products.find(x=>x.id===id),v=prompt('Stok baru',p.stock);if(v!==null&&+v>=0)await setDoc(doc(db,'stores',auth.currentUser.uid,'products',id),{...p,stock:+v})}
 function renderList(){document.getElementById('plist').innerHTML=products.map(p=>`<div class="box"><b>${esc(p.name)}</b><div class="muted">${rp(p.price)} • Stok ${p.stock} • ${p.barcode||'-'}</div><button class="btn gray" onclick="stock('${p.id}')">Ubah Stok</button> <button class="btn red" onclick="del('${p.id}')">Hapus</button></div>`).join('')}
