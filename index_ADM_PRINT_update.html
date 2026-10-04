@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0f766e">
+<title>ADM PRINT - Kasir Online</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#eef2f7;color:#172033;font-family:Arial,sans-serif}.app{max-width:800px;margin:auto}
+header{background:#0f766e;color:#fff;padding:14px 16px;position:sticky;top:0;z-index:20}
+.brand{display:flex;align-items:center;gap:10px}.logo{width:48px;height:48px;object-fit:contain;background:#fff;border-radius:9px;padding:2px}
+header h1{margin:0;font-size:21px}header small{opacity:.9}
+nav{display:flex;background:#fff;position:sticky;top:76px;z-index:19;box-shadow:0 1px 5px #0002}
+nav button{flex:1;border:0;background:#fff;padding:12px 3px;font-weight:bold;color:#64748b}nav button.on{color:#0f766e;border-bottom:3px solid #0f766e}
+main{padding:12px}.box{background:#fff;border-radius:14px;padding:13px;box-shadow:0 1px 4px #0001;margin-bottom:10px}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:9px}.card{background:#fff;border-radius:13px;padding:12px;box-shadow:0 1px 4px #0001}.card b{display:block}
+.price{color:#0f766e;font-weight:bold;margin-top:4px}.muted{font-size:12px;color:#64748b}
+input{width:100%;padding:12px;border:1px solid #cbd5e1;border-radius:10px;font-size:16px;background:#fff}
+.field{margin:7px 0}.field label{display:block;font-size:12px;color:#64748b;margin-bottom:3px}.formgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.btn{border:0;border-radius:9px;padding:11px 13px;font-weight:bold}.primary{background:#0f766e;color:white}.dark{background:#172033;color:white}.red{background:#dc2626;color:white}.gray{background:#e2e8f0}.green{background:#16a34a;color:#fff}.full{width:100%;margin-top:8px}
+.row{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid #e5e7eb}
+.qty button{width:30px;height:30px;background:#fff;border:1px solid #cbd5e1;border-radius:6px}.total{font-size:20px;font-weight:bold;margin-top:12px}
+.empty{text-align:center;padding:25px;color:#64748b}
+#login{min-height:100vh;padding:25px 15px;background:#eef2f7}.loginbox{max-width:420px;margin:30px auto;background:#fff;padding:22px;border-radius:16px;box-shadow:0 2px 10px #0001}
+.loginlogo{display:block;width:90px;height:90px;object-fit:contain;margin:0 auto 10px}
+@media(min-width:600px){.grid{grid-template-columns:repeat(3,1fr)}}
+@media print{body{background:#fff}.app>header,.app>nav,#kasir,#produk,#laporan{display:none!important}#printArea{display:block!important}}
+#printArea{display:none}
+
+/* Nota baru */
+.receipt{width:80mm;margin:auto;font-family:"Courier New",monospace;font-size:11px;line-height:1.35;color:#111;padding:4mm 3mm}
+.receipt .rhead{text-align:center}.receipt .rlogo{width:25mm;height:19mm;object-fit:contain;margin-bottom:1mm}
+.receipt h2{margin:0;font-size:20px;letter-spacing:1px}.receipt .tagline{font-size:10px;margin-top:1px}
+.receipt .meta{font-size:10px;margin-top:5px}.receipt hr{border:0;border-top:1px dashed #111;margin:7px 0}
+.rline{display:flex;justify-content:space-between;gap:6px}.rline b{font-size:12px}
+.itemname{font-weight:bold;margin-top:5px;word-break:break-word}.itemdetail{display:flex;justify-content:space-between;gap:4px;font-size:10px}
+.grand{font-size:13px;font-weight:bold}.thanks{text-align:center;margin-top:7px;font-weight:bold}.wa-note{text-align:center;font-size:9px;margin-top:4px}
+.actionrow{display:flex;gap:7px;margin-top:8px}.actionrow .btn{flex:1}
+</style>
+</head>
+<body>
+<section id="login">
+<div class="loginbox">
+<img src="logo.png" class="loginlogo">
+<h2 style="text-align:center;margin:5px">ADM PRINT</h2><p class="muted" style="text-align:center">Kasir Online</p>
+<div class="field"><label>Email</label><input id="email" type="email" placeholder="email Anda"></div>
+<div class="field"><label>Password</label><input id="password" type="password" placeholder="minimal 6 karakter"></div>
+<button class="btn primary full" onclick="login()">Masuk</button>
+<button class="btn gray full" onclick="register()">Buat Akun Baru</button>
+<p id="loginMsg" class="muted"></p>
+</div></section>
+
+<div class="app" id="app" style="display:none">
+<header><div class="brand"><img src="logo.png" class="logo"><div><h1>ADM PRINT</h1><small>Kasir Online • <span id="userEmail"></span></small></div></div></header>
+<nav><button id="nk" class="on" onclick="page('kasir')">🛒 Kasir</button><button id="np" onclick="page('produk')">📦 Produk</button><button id="nl" onclick="page('laporan')">📊 Laporan</button><button onclick="logout()">Keluar</button></nav>
+
+<section id="kasir"><main>
+<input id="search" placeholder="🔎 Cari produk / barcode..." oninput="renderProducts()">
+<div id="products" class="grid"></div>
+<div class="box"><h3 style="margin:0">Keranjang</h3><div id="cart"></div>
+<div class="formgrid"><div class="field"><label>Diskon (Rp)</label><input id="discount" type="number" inputmode="numeric" value="0" oninput="renderCart()"></div>
+<div class="field"><label>Bayar (Rp)</label><input id="paid" type="number" inputmode="numeric" oninput="renderCart()"></div></div>
+<div class="total">Total: <span id="total">Rp0</span></div><div id="change" class="muted">Kembalian: Rp0</div>
+<button class="btn primary full" onclick="checkout()">✅ BAYAR & CETAK NOTA</button>
+</div></main></section>
+
+<section id="produk" style="display:none"><main>
+<div class="box"><h3 style="margin-top:0">Tambah Produk</h3>
+<div class="field"><label>Nama produk</label><input id="pn" placeholder="Contoh: Cetak Foto 4R"></div>
+<div class="formgrid"><div class="field"><label>Harga</label><input id="pp" type="number"></div><div class="field"><label>Stok</label><input id="ps" type="number"></div></div>
+<div class="field"><label>Barcode</label><input id="pb"></div><button class="btn primary full" onclick="addProduct()">＋ Tambah Produk</button>
+</div><div id="plist"></div></main></section>
+
+<section id="laporan" style="display:none"><main>
+<div class="box"><b>Penjualan Hari Ini</b><h2 id="sales">Rp0</h2><span id="count" class="muted">0 transaksi</span></div>
+<div id="hist"></div></main></section>
+<div id="printArea"></div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
+import { getFirestore, collection, doc, addDoc, setDoc, deleteDoc, onSnapshot, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
+import { firebaseConfig } from "./config.js";
+
+const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app);
+const rp=n=>new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(n||0);
+let products=[],cart=[],history=[],unsubP=null,unsubH=null;
+
+function col(name){return collection(db,'stores',auth.currentUser.uid,name)}
+function showMsg(m){document.getElementById('loginMsg').textContent=m}
+window.login=async()=>{try{await signInWithEmailAndPassword(auth,email.value,password.value)}catch(e){showMsg(e.message)}}
+window.register=async()=>{try{await createUserWithEmailAndPassword(auth,email.value,password.value);showMsg('Akun berhasil dibuat.')}catch(e){showMsg(e.message)}}
+window.logout=()=>signOut(auth);
+
+onAuthStateChanged(auth,u=>{
+ if(u){document.getElementById('login').style.display='none';document.getElementById('app').style.display='block';document.getElementById('userEmail').textContent=u.email;startSync()}
+ else{document.getElementById('login').style.display='block';document.getElementById('app').style.display='none';if(unsubP)unsubP();if(unsubH)unsubH()}
+});
+
+function startSync(){
+ unsubP=onSnapshot(col('products'),s=>{products=s.docs.map(d=>({id:d.id,...d.data()}));renderProducts();renderList()});
+ unsubH=onSnapshot(query(col('sales'),orderBy('createdAt','desc')),s=>{history=s.docs.map(d=>({id:d.id,...d.data()}));renderReport()});
+}
+function page(p){['kasir','produk','laporan'].forEach(x=>document.getElementById(x).style.display=x===p?'block':'none');['k','p','l'].forEach(x=>document.getElementById('n'+x)?.classList.remove('on'));document.getElementById('n'+({kasir:'k',produk:'p',laporan:'l'}[p]))?.classList.add('on');if(p==='produk')renderList();if(p==='laporan')renderReport()}
+window.page=page;
+function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
+function renderProducts(){let q=(document.getElementById('search').value||'').toLowerCase();let a=products.filter(p=>p.name.toLowerCase().includes(q)||String(p.barcode||'').toLowerCase().includes(q));document.getElementById('products').innerHTML=a.map(p=>`<div class="card"><b>${esc(p.name)}</b><div class="price">${rp(p.price)}</div><div class="muted">Stok: ${p.stock}</div><button class="btn primary full" onclick="addCart('${p.id}')" ${p.stock<=0?'disabled':''}>＋ Tambah</button></div>`).join('')||'<div class="empty">Produk tidak ditemukan</div>'}
+window.addCart=id=>{let p=products.find(x=>x.id===id);if(!p||p.stock<=0)return;let x=cart.find(x=>x.id===id);if(x){if(x.qty<p.stock)x.qty++}else cart.push({...p,qty:1});renderCart()}
+window.qty=(id,d)=>{let x=cart.find(i=>i.id===id),p=products.find(i=>i.id===id);if(!x)return;x.qty+=d;if(x.qty>p.stock)x.qty=p.stock;if(x.qty<=0)cart=cart.filter(i=>i.id!==id);renderCart()}
+function total(){return Math.max(0,cart.reduce((s,i)=>s+i.price*i.qty,0)-Number(discount.value||0))}
+function renderCart(){document.getElementById('cart').innerHTML=cart.length?cart.map(i=>`<div class="row"><div><b>${esc(i.name)}</b><div class="muted">${rp(i.price)} × ${i.qty}</div></div><div class="qty"><button onclick="qty('${i.id}',-1)">−</button> ${i.qty} <button onclick="qty('${i.id}',1)">+</button></div></div>`).join(''):'<div class="empty">Keranjang kosong</div>';let t=total(),pay=+paid.value||0;document.getElementById('total').textContent=rp(t);document.getElementById('change').textContent=pay<t?'Uang kurang: '+rp(t-pay):'Kembalian: '+rp(pay-t)}
+
+function receiptText(x){
+ let lines=['*ADM PRINT*','Nota Pembayaran',x.date,'------------------------------'];
+ x.items.forEach(i=>lines.push(`${i.name}  ${i.qty} x ${rp(i.price)} = ${rp(i.qty*i.price)}`));
+ lines.push('------------------------------',`Subtotal: ${rp(x.items.reduce((s,i)=>s+i.price*i.qty,0))}`,`Diskon: ${rp(x.discount)}`,`*TOTAL: ${rp(x.total)}*`,`Bayar: ${rp(x.paid)}`,`Kembali: ${rp(x.change)}`,'','Terima kasih sudah berbelanja di ADM PRINT.','Semoga puas dengan layanan kami 😊'];
+ return lines.join('\n');
+}
+function waReceipt(x){window.open('https://wa.me/?text='+encodeURIComponent(receiptText(x)),'_blank')}
+
+function makeReceipt(x){
+ let subtotal=x.items.reduce((s,i)=>s+i.price*i.qty,0);
+ return `<div class="receipt">
+ <div class="rhead"><img src="logo.png" class="rlogo"><h2>ADM PRINT</h2><div class="tagline">KASIR ONLINE • NOTA PEMBAYARAN</div><div class="meta">${esc(x.date)}</div></div>
+ <hr>${x.items.map(i=>`<div class="itemname">${esc(i.name)}</div><div class="itemdetail"><span>${i.qty} × ${rp(i.price)}</span><span>${rp(i.qty*i.price)}</span></div>`).join('')}
+ <hr><div class="rline"><span>SUBTOTAL</span><span>${rp(subtotal)}</span></div><div class="rline"><span>DISKON</span><span>${rp(x.discount)}</span></div>
+ <hr><div class="rline grand"><span>TOTAL</span><span>${rp(x.total)}</span></div><div class="rline"><span>BAYAR</span><span>${rp(x.paid)}</span></div><div class="rline"><span>KEMBALI</span><span>${rp(x.change)}</span></div>
+ <hr><div class="thanks">TERIMA KASIH 🙏</div><div class="center">Belanja di ADM PRINT</div><div class="wa-note">Simpan nota ini sebagai bukti pembayaran.</div>
+ </div>`
+}
+
+window.checkout=async()=>{
+ if(!cart.length)return alert('Keranjang kosong.');
+ let t=total(),pay=+paid.value||0;if(pay<t)return alert('Uang kurang '+rp(t-pay));
+ for(const i of cart){let p=products.find(x=>x.id===i.id);if(!p||p.stock<i.qty)return alert('Stok '+i.name+' tidak cukup.')}
+ let tr={date:new Date().toLocaleString('id-ID'),items:cart.map(x=>({...x})),discount:+discount.value||0,total:t,paid:pay,change:pay-t,createdAt:serverTimestamp()};
+ await addDoc(col('sales'),tr);
+ for(const i of cart){let p=products.find(x=>x.id===i.id);await setDoc(doc(db,'stores',auth.currentUser.uid,'products',p.id),{name:p.name,price:p.price,stock:p.stock-i.qty,barcode:p.barcode||''})}
+ cart=[];paid.value='';discount.value=0;renderCart();
+ document.getElementById('printArea').innerHTML=makeReceipt(tr);
+ if(confirm('Transaksi tersimpan.\n\nOK = cetak nota\nCancel = tidak cetak')) window.print();
+ if(confirm('Kirim nota ini melalui WhatsApp?')) waReceipt(tr);
+}
+
+window.addProduct=async()=>{let n=pn.value.trim(),p=+pp.value,s=+ps.value,b=pb.value.trim();if(!n||p<=0||s<0)return alert('Lengkapi data produk.');await addDoc(col('products'),{name:n,price:p,stock:s,barcode:b});pn.value=pp.value=ps.value=pb.value=''}
+window.del=async id=>{if(confirm('Hapus produk?'))await deleteDoc(doc(db,'stores',auth.currentUser.uid,'products',id))}
+window.stock=async id=>{let p=products.find(x=>x.id===id),v=prompt('Stok baru',p.stock);if(v!==null&&+v>=0)await setDoc(doc(db,'stores',auth.currentUser.uid,'products',id),{...p,stock:+v})}
+function renderList(){document.getElementById('plist').innerHTML=products.map(p=>`<div class="box"><b>${esc(p.name)}</b><div class="muted">${rp(p.price)} • Stok ${p.stock} • ${p.barcode||'-'}</div><button class="btn gray" onclick="stock('${p.id}')">Ubah Stok</button> <button class="btn red" onclick="del('${p.id}')">Hapus</button></div>`).join('')}
+function renderReport(){
+ let today=new Date().toLocaleDateString('id-ID'),h=history.filter(x=>(x.date||'').startsWith(today));
+ document.getElementById('sales').textContent=rp(h.reduce((s,x)=>s+x.total,0));document.getElementById('count').textContent=h.length+' transaksi';
+ document.getElementById('hist').innerHTML=history.slice(0,30).map((x,n)=>`<div class="box"><b>${x.date}</b><div class="muted">${x.items.map(i=>esc(i.name)+' × '+i.qty).join('<br>')}</div><p><b>Total ${rp(x.total)}</b><br>Bayar ${rp(x.paid)} • Kembali ${rp(x.change)}</p><div class="actionrow"><button class="btn primary" onclick='printReceipt(${JSON.stringify(x)})'>🖨️ Cetak</button><button class="btn green" onclick='waReceipt(${JSON.stringify(x)})'>💬 WhatsApp</button></div></div>`).join('')||'<div class="empty">Belum ada transaksi.</div>'
+}
+window.printReceipt=x=>{document.getElementById('printArea').innerHTML=makeReceipt(x);window.print()}
+window.waReceipt=waReceipt;
+renderCart();
+</script>
+</body></html>
