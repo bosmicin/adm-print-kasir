@@ -93,22 +93,8 @@ let products=[],cart=[],history=[],unsubP=null,unsubH=null;
 
 function col(name){return collection(db,'stores',auth.currentUser.uid,name)}
 function showMsg(m){loginMsgEl.textContent=m}
-window.login=async()=>{
- try{
-   const em=emailEl.value.trim(), pw=passwordEl.value;
-   if(!em||!pw) return showMsg('Masukkan email dan password.');
-   await signInWithEmailAndPassword(auth,em,pw);
- }catch(e){showMsg(e.message)}
-}
-window.register=async()=>{
- try{
-   const em=emailEl.value.trim(), pw=passwordEl.value;
-   if(!em||!pw) return showMsg('Masukkan email dan password.');
-   if(pw.length<6) return showMsg('Password minimal 6 karakter.');
-   await createUserWithEmailAndPassword(auth,em,pw);
-   showMsg('Akun berhasil dibuat.');
- }catch(e){showMsg(e.message)}
-}
+window.login=async()=>{try{await signInWithEmailAndPassword(auth,email.value,password.value)}catch(e){showMsg(e.message)}}
+window.register=async()=>{try{await createUserWithEmailAndPassword(auth,email.value,password.value);showMsg('Akun berhasil dibuat.')}catch(e){showMsg(e.message)}}
 window.logout=()=>signOut(auth);
 
 onAuthStateChanged(auth,u=>{
